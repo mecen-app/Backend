@@ -64,7 +64,7 @@ mod test {
     use crate::rocket;
 
     #[test]
-    fn hello_world() {
+    fn test_user_connection() {
         let client = Client::new(rocket()).expect("valid rocket instance");
         let response = client.post("/user/").header(ContentType::JSON).body(doc!
             {
