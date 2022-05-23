@@ -22,3 +22,5 @@ jobs:
       run: cargo +nightly build --verbose
     - name: Run tests
       run: cargo +nightly test --verbose
+      env:
+        DATABASE_URL: ${{ secrets.DATABASE_URL }}
