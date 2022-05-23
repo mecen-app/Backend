@@ -1,9 +1,8 @@
 #![allow(proc_macro_derive_resolution_fallback)]
 
 use std::borrow::Borrow;
-use std::io::ErrorKind;
 use mongodb::{sync::Database};
-use mongodb::bson::doc;
+use mongodb::bson::{Array, doc};
 use mongodb::error::Error;
 use rocket_contrib::json::JsonValue;
 use serde::{Serialize, Deserialize};
@@ -15,22 +14,14 @@ pub struct User {
     pub id: String,
     pub token_id: String,
     pub email: String,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct PublicUser {
-    pub id: String,
-    pub email: String,
+    pub balance: i32,
+    pub friends: Array,
+    pub open_loans: Array,
+    pub open_borrows: Array,
+    pub open_propositions: Array
 }
 
 impl User {
-
-    pub fn to_public(user: User) -> PublicUser {
-        PublicUser {
-            id: user.id,
-            email: user.email
-        }
-    }
 
     pub fn from_email(email: String, connection: &Database) -> Option<User> {
         let result = connection.collection::<User>("users").find_one(doc! {"email": email}, None);
@@ -40,14 +31,6 @@ impl User {
                 dbg!(e);
                 None
             }
-        }
-    }
-
-    pub fn infos(id: String, connection: &Database) -> Result<JsonValue, Error> {
-        let result = connection.collection::<User>("users").find_one(doc! {"id": id.to_string()}, None)?;
-        match result {
-            Some(user) => Ok(JsonValue::from(json!(User::to_public(user)))),
-            None => Err(Error::from(ErrorKind::NotFound))
         }
     }
 
