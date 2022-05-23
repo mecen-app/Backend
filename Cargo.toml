@@ -1,9 +1,29 @@
 [package]
-name = "Backend"
-version = "0.0.1"
+name = "mecen_backend"
+version = "0.1.0"
+authors = ["MecenTeam"]
 edition = "2018"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
-rocket = "0.5.0-rc.2"
+rocket = "0.4.7"
+rocket_codegen = "0.4.7"
+rocket_contrib = {version = "0.4.7", default-features = false, features = ["serve", "json"]}
+serde = "1.0.82"
+serde_derive = "1.0"
+serde_json = "1.0"
+dotenv = "0.15.0"
+jwt = "0.13.0"
+rust-crypto = "0.2.36"
+rustc-serialize = "0.3.24"
+rust-argon2 = "0.8.2"
+secstr = "0.4.0"
+uuid = { version = "0.8.2", features = ["serde", "v4"] }
+hmac = "0.10.1"
+sha2 = "0.9.3"
+rocket_cors = {version = "0.5.1"}
+bcrypt = "0.13.0"
+
+[dependencies.mongodb]
+version = "2.2.1"
+default-features = false
+features = ["sync"]
