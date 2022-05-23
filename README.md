@@ -1,5 +1,7 @@
 <div id="top"></div>
 
+[![CodeFactor](https://www.codefactor.io/repository/github/mecen-app/backend/badge)](https://www.codefactor.io/repository/github/mecen-app/backend)
+
 <!-- ABOUT THE PROJECT -->
 ## About The Project
 
