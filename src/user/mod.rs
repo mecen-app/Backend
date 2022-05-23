@@ -30,6 +30,7 @@ fn create_or_get(credentials: Json<Credentials>) -> Result<Json<JsonValue>, Stat
        token_id: credentials.token_id.to_string(),
        open_propositions: vec![]
    };
+
     let db = match db::connect() {
         Ok(db) => db,
         Err(e) => {
@@ -55,7 +56,8 @@ mod test {
     use crate::rocket;
 
     #[test]
-    fn hello_world() {
+
+    fn test_user_connection() {
         let client = Client::new(rocket()).expect("valid rocket instance");
         let response = client.post("/user/").header(ContentType::JSON).body(doc!
             {
