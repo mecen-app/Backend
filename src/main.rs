@@ -43,7 +43,7 @@ fn rocket() -> Rocket<Build> {
     dotenv().ok();
 
     let mut rocket = rocket::build().attach(CORS);
-    rocket = user::google::mount(rocket);
+    rocket = user::mount(rocket);
     rocket
 }
 
