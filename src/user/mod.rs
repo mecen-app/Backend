@@ -1,36 +1,21 @@
 pub mod model;
 
-extern crate hmac;
-extern crate sha2;
-
 use std::borrow::Borrow;
 use rocket::*;
 use rocket::http::Status;
-use rocket_contrib::json::{Json, JsonValue};
-use self::model::User;
+use self::model::{User, GoogleToken};
 use super::db;
-use uuid::Uuid;
-use std::str;
+use rocket::serde::json::Json;
+use rocket_contrib::json::JsonValue;
+use serde_json::json;
 
-#[derive(Serialize, Deserialize)]
-struct Credentials {
-    email: String,
-    token_id: String
+#[post("/google")]
+async fn get_user_infos(user: User) -> Result<Json<JsonValue>, Status> {
+    Ok(Json(JsonValue::from(json!(user))))
 }
 
-#[post("/", format = "application/json", data = "<credentials>")]
-fn create_or_get(credentials: Json<Credentials>) -> Result<Json<JsonValue>, Status> {
-   let mut user = User {
-       id: Uuid::new_v4().to_string(),
-       email: credentials.email.to_string(),
-       balance: 0,
-       friends: vec![],
-       open_loans: vec![],
-       open_borrows: vec![],
-       token_id: credentials.token_id.to_string(),
-       open_propositions: vec![]
-   };
-
+#[post("/google", rank=2)]
+async fn create_first_connection(token: GoogleToken) -> Result<Json<JsonValue>, Status> {
     let db = match db::connect() {
         Ok(db) => db,
         Err(e) => {
@@ -38,33 +23,22 @@ fn create_or_get(credentials: Json<Credentials>) -> Result<Json<JsonValue>, Stat
             return Err(Status::FailedDependency)
         }
     };
-    let res = user.create_or_get(db.borrow());
+    let mut user = User {
+        id: "".to_string(),
+        token_id: token.value,
+        email: "".to_string(),
+        balance: 0,
+        friends: vec![],
+        open_loans: vec![],
+        open_borrows: vec![],
+        open_propositions: vec![],
+        user_name: "".to_string()
+    };
+    let res = user.create_or_get_google(db.borrow()).await;
     res.map(|item| Json(item))
-        .map_err(|_| Status::Conflict)
 }
 
-pub fn mount(rocket: Rocket) -> Rocket {
+pub fn mount(rocket: Rocket<Build>) -> Rocket<Build> {
     rocket
-        .mount("/user", routes![create_or_get])
-}
-
-#[cfg(test)]
-mod test {
-    use mongodb::bson::doc;
-    use rocket::local::Client;
-    use rocket::http::{ContentType, Status};
-    use crate::rocket;
-
-    #[test]
-
-    fn test_user_connection() {
-        let client = Client::new(rocket()).expect("valid rocket instance");
-        let response = client.post("/user/").header(ContentType::JSON).body(doc!
-            {
-                "email": "test@gmail.com",
-                "token_id": "hashed"
-            }.to_string())
-            .dispatch();
-        assert_eq!(response.status(), Status::Ok);
-    }
+        .mount("/user", routes![get_user_infos, create_first_connection])
 }
