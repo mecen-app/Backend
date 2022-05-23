@@ -19,12 +19,18 @@ struct Credentials {
 }
 
 #[post("/", format = "application/json", data = "<credentials>")]
-fn create(credentials: Json<Credentials>) -> Result<Json<JsonValue>, Status> {
+fn create_or_get(credentials: Json<Credentials>) -> Result<Json<JsonValue>, Status> {
    let mut user = User {
        id: Uuid::new_v4().to_string(),
        email: credentials.email.to_string(),
-       token_id: credentials.token_id.to_string()
- };
+       balance: 0,
+       friends: vec![],
+       open_loans: vec![],
+       open_borrows: vec![],
+       token_id: credentials.token_id.to_string(),
+       open_propositions: vec![]
+   };
+
     let db = match db::connect() {
         Ok(db) => db,
         Err(e) => {
@@ -37,23 +43,9 @@ fn create(credentials: Json<Credentials>) -> Result<Json<JsonValue>, Status> {
         .map_err(|_| Status::Conflict)
 }
 
-#[get("/<id>", format = "application/json")]
-fn find(id: String) -> Result<Json<JsonValue>, Status> {
-    let db = match db::connect() {
-        Ok(db) => db,
-        Err(e) => {
-            dbg!(e);
-            return Err(Status::FailedDependency)
-        }
-    };
-    let res = User::infos(id, db.borrow());
-    res.map(|item| Json(item))
-        .map_err(|_| Status::NotFound)
-}
-
 pub fn mount(rocket: Rocket) -> Rocket {
     rocket
-        .mount("/user", routes![create, find])
+        .mount("/user", routes![create_or_get])
 }
 
 #[cfg(test)]
@@ -64,6 +56,7 @@ mod test {
     use crate::rocket;
 
     #[test]
+
     fn test_user_connection() {
         let client = Client::new(rocket()).expect("valid rocket instance");
         let response = client.post("/user/").header(ContentType::JSON).body(doc!
