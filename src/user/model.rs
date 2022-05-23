@@ -125,7 +125,7 @@ impl<'r> FromRequest<'r> for GoogleToken {
             Some(token) => {
                 Outcome::Success(GoogleToken{value: token.replace("Bearer ", "").to_string()})
             },
-            None => Outcome::Failure((Status::Unauthorized, ()))
+            None => Outcome::Failure((Status::BadRequest, ()))
         }
     }
 }
