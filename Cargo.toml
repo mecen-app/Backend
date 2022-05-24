@@ -5,9 +5,9 @@ authors = ["MecenTeam"]
 edition = "2018"
 
 [dependencies]
-rocket = "0.4.7"
+rocket = {version = "0.5.0-rc.2", features = ["json"] }
 rocket_codegen = "0.4.7"
-rocket_contrib = {version = "0.4.7", default-features = false, features = ["serve", "json"]}
+rocket_cors = {version = "0.5.1"}
 serde = "1.0.82"
 serde_derive = "1.0"
 serde_json = "1.0"
@@ -15,15 +15,16 @@ dotenv = "0.15.0"
 jwt = "0.13.0"
 rust-crypto = "0.2.36"
 rustc-serialize = "0.3.24"
-rust-argon2 = "0.8.2"
-secstr = "0.4.0"
 uuid = { version = "0.8.2", features = ["serde", "v4"] }
-hmac = "0.10.1"
-sha2 = "0.9.3"
-rocket_cors = {version = "0.5.1"}
-bcrypt = "0.13.0"
+jwks-client = "0.1.4"
+futures = "0.3.21"
 
 [dependencies.mongodb]
 version = "2.2.1"
 default-features = false
 features = ["sync"]
+
+[dependencies.rocket_contrib]
+version = "0.5.0-dev"
+git = "https://github.com/jfbilodeau/Rocket"
+features = ["serve", "json"]

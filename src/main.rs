@@ -1,39 +1,54 @@
 #![feature(plugin)]
 #![feature(decl_macro, proc_macro_hygiene)]
+#![feature(generators)]
 extern crate rocket;
 
 extern crate dotenv;
-extern crate bcrypt;
 
-#[macro_use]
 extern crate serde_derive;
 
 use dotenv::dotenv;
-use rocket_cors::{AllowedOrigins, CorsOptions};
-use rocket::http::Method;
-use rocket::Rocket;
+use rocket::http::Header;
+use rocket::{Build, Request, Response, Rocket};
+use rocket::fairing::{Fairing, Info, Kind};
 
 mod db;
 mod user;
 
-fn rocket() -> Rocket {
-    dotenv().ok();
-    let cors = CorsOptions::default()
-        .allowed_origins(AllowedOrigins::all())
-        .allowed_methods(
-            vec![Method::Get, Method::Post, Method::Patch]
-                .into_iter()
-                .map(From::from)
-                .collect(),
-        )
-        .allow_credentials(true);
+pub struct CORS;
 
-    let mut rocket = rocket::ignite().attach(cors.to_cors().unwrap());
+#[rocket::async_trait]
+impl Fairing for CORS {
+    fn info(&self) -> Info {
+        Info {
+            name: "Add CORS headers to responses",
+            kind: Kind::Response,
+        }
+    }
+
+    async fn on_response<'r>(&self, _request: &'r Request<'_>, response: &mut Response<'r>) {
+        println!("Setting access control allow origin");
+        response.set_header(Header::new("Access-Control-Allow-Origin", "*"));
+        response.set_header(Header::new(
+            "Access-Control-Allow-Methods",
+            "POST, GET",
+        ));
+        response.set_header(Header::new("Access-Control-Allow-Headers", "*"));
+        response.set_header(Header::new("Access-Control-Allow-Credentials", "true"));
+
+    }
+}
+
+fn rocket() -> Rocket<Build> {
+    dotenv().ok();
+
+    let mut rocket = rocket::build().attach(CORS);
     rocket = user::mount(rocket);
     rocket
 }
 
-fn main() {
+#[rocket::main]
+async fn main() -> () {
     let rocket = rocket();
-    rocket.launch();
+    rocket.launch().await;
 }
