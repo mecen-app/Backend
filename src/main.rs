@@ -1,8 +1,5 @@
 extern crate rocket;
-
 extern crate dotenv;
-
-extern crate serde_derive;
 
 use dotenv::dotenv;
 use rocket::http::Header;

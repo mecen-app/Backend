@@ -7,13 +7,14 @@ use mongodb::{sync::Database};
 use mongodb::bson::{Array, doc};
 use rocket::{Request, request};
 use rocket::request::FromRequest;
-use serde::{Serialize, Deserialize};
+use rocket::serde::{Serialize, Deserialize};
 use rocket::http::Status;
 use rocket::outcome::Outcome;
 use crate::db;
 
 
 #[derive(Serialize, Deserialize, Debug)]
+#[serde(crate = "rocket::serde")]
 pub struct User {
     pub id: String,
     pub token_id: String,
