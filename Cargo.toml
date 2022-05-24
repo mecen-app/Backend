@@ -2,12 +2,10 @@
 name = "mecen_backend"
 version = "0.1.0"
 authors = ["MecenTeam"]
-edition = "2018"
+edition = "2021"
 
 [dependencies]
 rocket = {version = "0.5.0-rc.2", features = ["json"] }
-rocket_codegen = "0.4.7"
-rocket_cors = {version = "0.5.1"}
 serde = "1.0.82"
 serde_derive = "1.0"
 serde_json = "1.0"
@@ -23,8 +21,3 @@ futures = "0.3.21"
 version = "2.2.1"
 default-features = false
 features = ["sync"]
-
-[dependencies.rocket_contrib]
-version = "0.5.0-dev"
-git = "https://github.com/jfbilodeau/Rocket"
-features = ["serve", "json"]

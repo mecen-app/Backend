@@ -2,13 +2,12 @@
 
 use std::borrow::Borrow;
 use jwks_client::keyset::KeyStore;
+use rocket::serde::json::{Json, json, Value};
 use mongodb::{sync::Database};
 use mongodb::bson::{Array, doc};
 use rocket::{Request, request};
 use rocket::request::FromRequest;
-use rocket_contrib::json::JsonValue;
 use serde::{Serialize, Deserialize};
-use serde_json::json;
 use rocket::http::Status;
 use rocket::outcome::Outcome;
 use crate::db;
@@ -40,7 +39,7 @@ impl User {
         }
     }
 
-    pub fn set_google_account(&mut self) -> Result<&mut User, jwks_client::error::Error> {
+    pub fn set_oauth_account(&mut self) -> Result<&mut User, jwks_client::error::Error> {
         let jkws_url = "https://www.googleapis.com/oauth2/v3/certs";
         let key_set = KeyStore::new_from(jkws_url).unwrap();
 
@@ -57,7 +56,7 @@ impl User {
         }
     }
 
-    pub fn get_user_from_token_google(mut token: String, connection: &Database) -> Option<User> {
+    pub fn get_user_from_token(mut token: String, connection: &Database) -> Option<User> {
         let jkws_url = "https://www.googleapis.com/oauth2/v3/certs";
         let key_set = KeyStore::new_from(jkws_url).unwrap();
 
@@ -74,12 +73,12 @@ impl User {
         }
     }
 
-    pub async fn create_or_get_google(&mut self, connection: &Database) -> Result<JsonValue, Status> {
-        self.set_google_account().map_err(|_| Status::Unauthorized)?;
+    pub async fn create_user(&mut self, connection: &Database) -> Result<Json<Value>, Status> {
+        self.set_oauth_account().map_err(|_| Status::Unauthorized)?;
         match connection.collection::<User>("users").insert_one(self.borrow(), None) {
             Ok(val) => {
                 dbg!(val);
-                Ok(JsonValue::from(json!(self)))
+                Ok(Json(json!(self)))
             },
             Err(e) => {
                 dbg!(e.borrow());
@@ -104,7 +103,7 @@ impl<'r> FromRequest<'r> for User {
                 return Outcome::Forward(())
             }
         };
-        match User::get_user_from_token_google(keys[0].to_string(), &db) {
+        match User::get_user_from_token(keys[0].to_string(), &db) {
             Some(user) => Outcome::Success(user),
             None => Outcome::Forward(())
         }

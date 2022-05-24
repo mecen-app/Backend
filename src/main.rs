@@ -1,6 +1,3 @@
-#![feature(plugin)]
-#![feature(decl_macro, proc_macro_hygiene)]
-#![feature(generators)]
 extern crate rocket;
 
 extern crate dotenv;
