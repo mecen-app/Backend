@@ -1,11 +1,5 @@
-#![feature(plugin)]
-#![feature(decl_macro, proc_macro_hygiene)]
-#![feature(generators)]
 extern crate rocket;
-
 extern crate dotenv;
-
-extern crate serde_derive;
 
 use dotenv::dotenv;
 use rocket::http::Header;
