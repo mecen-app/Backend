@@ -44,6 +44,7 @@ fn rocket() -> Rocket<Build> {
 
 #[rocket::main]
 async fn main() -> () {
+    let mangop = Mangopay::init_mango("aaa".to_string(), "aaaaaa".to_string());
     let rocket = rocket();
     rocket.launch().await;
 }
