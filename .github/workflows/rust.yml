@@ -20,7 +20,7 @@ jobs:
       run: cargo build --verbose
     - name: Run tests
       run: cargo test --verbose
-      env:
-        DATABASE_URL: ${{ secrets.DATABASE_URL }}
-        MANGO_API_KEY: ${{ secrets.MANGO_API_KEY }}
-        MANGO_CLIENT_ID: ${{ secrets.MANGO_CLIENT_ID }}
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      MANGO_API_KEY: ${{ secrets.MANGO_API_KEY }}
+      MANGO_CLIENT_ID: ${{ secrets.MANGO_CLIENT_ID }}
