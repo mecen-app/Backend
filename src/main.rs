@@ -5,6 +5,7 @@ use dotenv::dotenv;
 use rocket::http::Header;
 use rocket::{Build, Request, Response, Rocket};
 use rocket::fairing::{Fairing, Info, Kind};
+use mangopay::Mangopay;
 
 mod db;
 mod user;
@@ -43,6 +44,7 @@ fn rocket() -> Rocket<Build> {
 
 #[rocket::main]
 async fn main() -> () {
+    let mangop = Mangopay::init_mango("aaa".to_string(), "aaaaaa".to_string());
     let rocket = rocket();
     rocket.launch().await;
 }

@@ -2,6 +2,9 @@
 
 use std::borrow::Borrow;
 use jwks_client::keyset::KeyStore;
+use mangopay::Mangopay;
+use mangopay::user::CreateUserBody;
+use mangopay::wallet::Wallet;
 use rocket::serde::json::{Json, json, Value};
 use mongodb::{sync::Database};
 use mongodb::bson::{Array, doc};
@@ -10,6 +13,7 @@ use rocket::request::FromRequest;
 use rocket::serde::{Serialize, Deserialize};
 use rocket::http::Status;
 use rocket::outcome::Outcome;
+use rustc_serialize::json::ToJson;
 use crate::db;
 
 
@@ -24,7 +28,9 @@ pub struct User {
     pub open_loans: Array,
     pub open_borrows: Array,
     pub open_propositions: Array,
-    pub user_name: String
+    pub user_name: String,
+    pub mango_pay_user_id: String,
+    pub mango_wallet_id: String
 }
 
 impl User {
@@ -74,8 +80,32 @@ impl User {
         }
     }
 
+    pub fn set_mango_user(&mut self) -> Result<&mut User, Status> {
+        let mango: Mangopay = Mangopay::init(env!("MANGO_CLIENT_ID").parse().unwrap(), env!("MANGO_API_KEY").parse().unwrap());
+        let user_infos = CreateUserBody {
+            first_name: self.user_name.split(' ')[0],
+            last_name: self.user_name.split(' ')[1],
+            email: self.email.to_string(),
+            user_category: "Payer".to_string(),
+            tag: "Backend".to_string(),
+            terms_and_conditions_accepted: true
+        };
+        let user = match mango.create_user(&user_infos) {
+            Some(user) => user,
+            None => return Err(Status::FailedDependency)
+        };
+        self.mango_pay_user_id = user.id;
+        let wallet: Wallet = match mango.create_wallet(self.mango_pay_user_id.to_string()) {
+          Some(wallet) => wallet,
+            None => return Err(Status::FailedDependency)
+        };
+        self.mango_wallet_id = wallet.id;
+        Ok(self)
+    }
+
     pub async fn create_user(&mut self, connection: &Database) -> Result<Json<Value>, Status> {
         self.set_oauth_account().map_err(|_| Status::Unauthorized)?;
+        self.set_mango_user()?;
         match connection.collection::<User>("users").insert_one(self.borrow(), None) {
             Ok(val) => {
                 dbg!(val);
