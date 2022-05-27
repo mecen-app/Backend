@@ -5,6 +5,7 @@ use dotenv::dotenv;
 use rocket::http::Header;
 use rocket::{Build, Request, Response, Rocket};
 use rocket::fairing::{Fairing, Info, Kind};
+use mangopay::Mangopay;
 
 mod db;
 mod user;
