@@ -1,21 +1,19 @@
 #![allow(proc_macro_derive_resolution_fallback)]
 
-use std::borrow::Borrow;
+use crate::db;
 use jwks_client::keyset::KeyStore;
-use mangopay::Mangopay;
 use mangopay::user::CreateUserBody;
 use mangopay::wallet::Wallet;
-use rocket::serde::json::{Json, json, Value};
-use mongodb::{sync::Database};
-use mongodb::bson::{Array, doc};
-use rocket::{Request, request};
-use rocket::request::FromRequest;
-use rocket::serde::{Serialize, Deserialize};
+use mangopay::Mangopay;
+use mongodb::bson::{doc, Array};
+use mongodb::sync::Database;
 use rocket::http::Status;
 use rocket::outcome::Outcome;
-use rustc_serialize::json::ToJson;
-use crate::db;
-
+use rocket::request::FromRequest;
+use rocket::serde::json::{json, Json, Value};
+use rocket::serde::{Deserialize, Serialize};
+use rocket::{request, Request};
+use std::borrow::Borrow;
 
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(crate = "rocket::serde")]
@@ -30,13 +28,14 @@ pub struct User {
     pub open_propositions: Array,
     pub user_name: String,
     pub mango_pay_user_id: String,
-    pub mango_wallet_id: String
+    pub mango_wallet_id: String,
 }
 
 impl User {
-
     pub fn from_email(email: String, connection: &Database) -> Option<User> {
-        let result = connection.collection::<User>("users").find_one(doc! {"email": email}, None);
+        let result = connection
+            .collection::<User>("users")
+            .find_one(doc! {"email": email}, None);
         match result {
             Ok(v) => Some(v?),
             Err(e) => {
@@ -71,7 +70,10 @@ impl User {
         match key_set.verify(token.as_str()) {
             Ok(jwt) => {
                 dbg!(jwt.payload());
-                User::from_email(jwt.payload().get_str("email").unwrap().to_string(), connection)
+                User::from_email(
+                    jwt.payload().get_str("email").unwrap().to_string(),
+                    connection,
+                )
             }
             Err(e) => {
                 dbg!(e.borrow());
@@ -81,23 +83,32 @@ impl User {
     }
 
     pub fn set_mango_user(&mut self) -> Result<&mut User, Status> {
-        let mango: Mangopay = Mangopay::init(env!("MANGO_CLIENT_ID").parse().unwrap(), env!("MANGO_API_KEY").parse().unwrap());
+        let mango: Mangopay = Mangopay::init(
+            env!("MANGO_CLIENT_ID").parse().unwrap(),
+            env!("MANGO_API_KEY").parse().unwrap(),
+        );
         let user_infos = CreateUserBody {
-            first_name: match self.user_name.split(' ').collect::<Vec<&str>>().get(0) { Some(val) => val.to_string(), None => "".to_string()},
-            last_name: match self.user_name.split(' ').collect::<Vec<&str>>().get(1) { Some(val) => val.to_string(), None => "".to_string()},
+            first_name: match self.user_name.split(' ').collect::<Vec<&str>>().get(0) {
+                Some(val) => val.to_string(),
+                None => "".to_string(),
+            },
+            last_name: match self.user_name.split(' ').collect::<Vec<&str>>().get(1) {
+                Some(val) => val.to_string(),
+                None => "".to_string(),
+            },
             email: self.email.to_string(),
             user_category: "Payer".to_string(),
             tag: "Backend".to_string(),
-            terms_and_conditions_accepted: true
+            terms_and_conditions_accepted: true,
         };
         let user = match mango.create_user(&user_infos) {
             Some(user) => user,
-            None => return Err(Status::FailedDependency)
+            None => return Err(Status::FailedDependency),
         };
         self.mango_pay_user_id = user.id;
         let wallet: Wallet = match mango.create_wallet(self.mango_pay_user_id.to_string()) {
-          Some(wallet) => wallet,
-            None => return Err(Status::FailedDependency)
+            Some(wallet) => wallet,
+            None => return Err(Status::FailedDependency),
         };
         self.mango_wallet_id = wallet.id;
         Ok(self)
@@ -106,11 +117,14 @@ impl User {
     pub async fn create_user(&mut self, connection: &Database) -> Result<Json<Value>, Status> {
         self.set_oauth_account().map_err(|_| Status::Unauthorized)?;
         self.set_mango_user()?;
-        match connection.collection::<User>("users").insert_one(self.borrow(), None) {
+        match connection
+            .collection::<User>("users")
+            .insert_one(self.borrow(), None)
+        {
             Ok(val) => {
                 dbg!(val);
                 Ok(Json(json!(self)))
-            },
+            }
             Err(e) => {
                 dbg!(e.borrow());
                 Err(Status::AlreadyReported)
@@ -131,12 +145,12 @@ impl<'r> FromRequest<'r> for User {
             Ok(db) => db,
             Err(e) => {
                 dbg!(e);
-                return Outcome::Forward(())
+                return Outcome::Forward(());
             }
         };
         match User::get_user_from_token(keys[0].to_string(), &db) {
             Some(user) => Outcome::Success(user),
-            None => Outcome::Forward(())
+            None => Outcome::Forward(()),
         }
     }
 }
