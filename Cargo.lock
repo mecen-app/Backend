@@ -1591,6 +1591,8 @@ dependencies = [
 [[package]]
 name = "mangopay"
 version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "13ce014e7c02156534d743fb6ceee5f9ad99245a497ae2356ef5632b4f5002b8"
 dependencies = [
  "base64 0.13.0",
  "reqwest 0.11.10",
