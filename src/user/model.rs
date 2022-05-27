@@ -83,8 +83,8 @@ impl User {
     pub fn set_mango_user(&mut self) -> Result<&mut User, Status> {
         let mango: Mangopay = Mangopay::init(env!("MANGO_CLIENT_ID").parse().unwrap(), env!("MANGO_API_KEY").parse().unwrap());
         let user_infos = CreateUserBody {
-            first_name: self.user_name.split(' ')[0],
-            last_name: self.user_name.split(' ')[1],
+            first_name: match self.user_name.split(' ').collect::<Vec<&str>>().get(0) { Some(val) => val.to_string(), None => "".to_string()},
+            last_name: match self.user_name.split(' ').collect::<Vec<&str>>().get(1) { Some(val) => val.to_string(), None => "".to_string()},
             email: self.email.to_string(),
             user_category: "Payer".to_string(),
             tag: "Backend".to_string(),
