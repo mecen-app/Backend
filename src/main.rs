@@ -1,11 +1,10 @@
-extern crate rocket;
 extern crate dotenv;
+extern crate rocket;
 
 use dotenv::dotenv;
+use rocket::fairing::{Fairing, Info, Kind};
 use rocket::http::Header;
 use rocket::{Build, Request, Response, Rocket};
-use rocket::fairing::{Fairing, Info, Kind};
-use mangopay::Mangopay;
 
 mod db;
 mod user;
@@ -24,13 +23,9 @@ impl Fairing for CORS {
     async fn on_response<'r>(&self, _request: &'r Request<'_>, response: &mut Response<'r>) {
         println!("Setting access control allow origin");
         response.set_header(Header::new("Access-Control-Allow-Origin", "*"));
-        response.set_header(Header::new(
-            "Access-Control-Allow-Methods",
-            "POST, GET",
-        ));
+        response.set_header(Header::new("Access-Control-Allow-Methods", "POST, GET"));
         response.set_header(Header::new("Access-Control-Allow-Headers", "*"));
         response.set_header(Header::new("Access-Control-Allow-Credentials", "true"));
-
     }
 }
 

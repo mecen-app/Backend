@@ -1,0 +1,17 @@
+on: push
+name: Clippy check
+jobs:
+  clippy_check:
+    runs-on: ubuntu-latest
+    permissions: write-all
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      MANGO_API_KEY: ${{ secrets.MANGO_API_KEY }}
+      MANGO_CLIENT_ID: ${{ secrets.MANGO_CLIENT_ID }}
+    steps:
+      - uses: actions/checkout@v1
+      - run: rustup component add clippy
+      - uses: actions-rs/clippy-check@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          args: --all-features
