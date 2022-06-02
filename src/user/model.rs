@@ -3,7 +3,7 @@
 use crate::db;
 use jwks_client::keyset::KeyStore;
 use mangopay::user::CreateUserBody;
-use mangopay::wallet::Wallet;
+use mangopay::wallet::{CreateWallet, Wallet};
 use mangopay::Mangopay;
 use mongodb::bson::{doc, Array};
 use mongodb::sync::Database;
@@ -86,6 +86,7 @@ impl User {
         let mango: Mangopay = Mangopay::init(
             env!("MANGO_CLIENT_ID").parse().unwrap(),
             env!("MANGO_API_KEY").parse().unwrap(),
+            "https://api.sandbox.mangopay.com/v2.01/".to_string()
         );
         let user_infos = CreateUserBody {
             first_name: match self.user_name.split(' ').collect::<Vec<&str>>().get(0) {
@@ -102,13 +103,18 @@ impl User {
             terms_and_conditions_accepted: true,
         };
         let user = match mango.create_user(&user_infos) {
-            Some(user) => user,
-            None => return Err(Status::FailedDependency),
+            Ok(user) => user,
+            Err(_) => return Err(Status::FailedDependency),
         };
         self.mango_pay_user_id = user.id;
-        let wallet: Wallet = match mango.create_wallet(self.mango_pay_user_id.to_string()) {
-            Some(wallet) => wallet,
-            None => return Err(Status::FailedDependency),
+        let wallet: Wallet = match mango.create_wallet(CreateWallet{
+            owners: vec![self.mango_pay_user_id.to_string()],
+            description: "".to_string(),
+            currency: "".to_string(),
+            tag: "".to_string()
+        }) {
+            Ok(wallet) => wallet,
+            Err(_) => return Err(Status::FailedDependency),
         };
         self.mango_wallet_id = wallet.id;
         Ok(self)
