@@ -28,7 +28,7 @@ pub struct User {
     pub open_propositions: Array,
     pub user_name: String,
     pub mango_pay_user_id: String,
-    pub mango_wallet_id: String,
+    pub mango_pay_wallet_id: String,
 }
 
 impl User {
@@ -116,7 +116,7 @@ impl User {
             Ok(wallet) => wallet,
             Err(_) => return Err(Status::FailedDependency),
         };
-        self.mango_wallet_id = wallet.id;
+        self.mango_pay_wallet_id = wallet.id;
         Ok(self)
     }
 
