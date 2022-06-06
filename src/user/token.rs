@@ -12,7 +12,6 @@ impl<'r> FromRequest<'r> for Token {
     type Error = ();
 
     async fn from_request(request: &'r Request<'_>) -> request::Outcome<Self, ()> {
-        panic!("ERROR TEST SENTRY");
         let token = request.headers().get_one("Authorization");
         match token {
             Some(token) => Outcome::Success(Token {
