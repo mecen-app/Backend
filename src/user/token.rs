@@ -1,4 +1,3 @@
-use core::panicking::panic;
 use rocket::http::Status;
 use rocket::outcome::Outcome;
 use rocket::request::FromRequest;
