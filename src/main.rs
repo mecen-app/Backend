@@ -5,6 +5,7 @@ use dotenv::dotenv;
 use rocket::fairing::{Fairing, Info, Kind};
 use rocket::http::Header;
 use rocket::{Build, Request, Response, Rocket};
+use rocket_sentry::RocketSentry;
 
 mod db;
 mod user;
@@ -32,7 +33,9 @@ impl Fairing for CORS {
 fn rocket() -> Rocket<Build> {
     dotenv().ok();
 
-    let mut rocket = rocket::build().attach(CORS);
+    let mut rocket = rocket::build()
+        .attach(CORS)
+        .attach(RocketSentry::fairing());
     rocket = user::mount(rocket);
     rocket
 }
