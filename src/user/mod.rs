@@ -37,7 +37,7 @@ pub async fn create_first_connection(token: Token) -> Result<Json<Value>, Status
         open_propositions: vec![],
         user_name: "".to_string(),
         mango_pay_user_id: "".to_string(),
-        mango_wallet_id: "".to_string(),
+        mango_pay_wallet_id: "".to_string(),
     };
     let res = user.create_user(db.borrow()).await;
     res.map(|item| item)
