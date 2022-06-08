@@ -44,6 +44,9 @@ Don't forget to give the project a star! Thanks again!
 Dotenv file is like this:
 ```
 DATABASE_URL=Mongodb url
+MANGO_CLIENT_ID=clientid
+MANGO_API_KEY=apikey
+ROCKET_SENTRY_DSN=sentrydsn
 ```
 
 <p align="right">(<a href="#top">back to top</a>)</p>
