@@ -3,7 +3,7 @@ use std::env;
 use mongodb::{error::Error, options::ClientOptions, sync::Client, sync::Database};
 
 fn database_url() -> String {
-    env::var("DATABASE_URL").expect("DATABASE_URL must be set")
+    env!("DATABASE_URL").to_string()
 }
 
 fn database_name() -> String {
