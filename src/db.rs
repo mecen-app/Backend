@@ -7,13 +7,7 @@ fn database_url() -> String {
 }
 
 fn database_name() -> String {
-    match env::var("ENVIRONMENT") {
-        Ok(val) => val,
-        Err(e) => {
-            dbg!(e);
-            "tests".to_string()
-        }
-    }
+    "tests".to_string()
 }
 
 pub(crate) fn connect() -> Result<Database, Error> {

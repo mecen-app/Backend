@@ -82,7 +82,7 @@ impl User {
         }
     }
 
-    pub fn set_mango_user(&mut self) -> Result<&mut User, Status> {
+    pub async fn set_mango_user(&mut self) -> Result<&mut User, Status> {
         let mango: Mangopay = Mangopay::init(
             env!("MANGO_CLIENT_ID").parse().unwrap(),
             env!("MANGO_API_KEY").parse().unwrap(),
@@ -102,19 +102,25 @@ impl User {
             tag: "Backend".to_string(),
             terms_and_conditions_accepted: true,
         };
-        let user = match mango.create_user(&user_infos) {
+        let user = match mango.create_user(&user_infos).await {
             Ok(user) => user,
-            Err(_) => return Err(Status::FailedDependency),
+            Err(e) => {
+                dbg!(e);
+                return Err(Status::FailedDependency)
+            },
         };
         self.mango_pay_user_id = user.id;
         let wallet: Wallet = match mango.create_wallet(CreateWallet{
             owners: vec![self.mango_pay_user_id.to_string()],
-            description: "".to_string(),
-            currency: "".to_string(),
-            tag: "".to_string()
-        }) {
+            description: "User wallet".to_string(),
+            currency: "EUR".to_string(),
+            tag: "Backend Created".to_string()
+        }).await {
             Ok(wallet) => wallet,
-            Err(_) => return Err(Status::FailedDependency),
+            Err(e) => {
+                dbg!(e);
+                return Err(Status::FailedDependency)
+            },
         };
         self.mango_pay_wallet_id = wallet.id;
         Ok(self)
@@ -122,7 +128,7 @@ impl User {
 
     pub async fn create_user(&mut self, connection: &Database) -> Result<Json<Value>, Status> {
         self.set_oauth_account().map_err(|_| Status::Unauthorized)?;
-        self.set_mango_user()?;
+        self.set_mango_user().await?;
         match connection
             .collection::<User>("users")
             .insert_one(self.borrow(), None)
