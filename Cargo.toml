@@ -23,7 +23,7 @@ features = ["sync"]
 
 [production]
 address = "0.0.0.0"
-port = 8000
+port = 8005
 workers = 2
 keep_alive = 5
 read_timeout = 5
