@@ -40,5 +40,5 @@ pub async fn finish_card_registration(user: User, input: Json<UpdateCardRegistra
 }
 
 pub fn mount(rocket: Rocket<Build>) -> Rocket<Build> {
-    rocket.mount("/card", routes![init_card_registration])
+    rocket.mount("/card", routes![init_card_registration, finish_card_registration])
 }
