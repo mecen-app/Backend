@@ -29,7 +29,7 @@ pub async fn init_card_registration(user: User) -> Result<Json<Value>, Status> {
 }
 
 #[post("/finish_card_registration?<registration_id>", data = "<input>")]
-pub async fn finish_card_registration(user: User, input: UpdateCardRegistrationBody, registration_id: String) -> Result<Json<Value>, Status> {
+pub async fn finish_card_registration(user: User, input: Json<UpdateCardRegistrationBody>, registration_id: String) -> Result<Json<Value>, Status> {
     let mango: Mangopay = Mangopay::init(
         env!("MANGO_CLIENT_ID").parse().unwrap(),
         env!("MANGO_API_KEY").parse().unwrap(),
