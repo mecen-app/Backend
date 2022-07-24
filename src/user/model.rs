@@ -5,7 +5,7 @@ use jwks_client::keyset::KeyStore;
 use mangopay::user::CreateUserBody;
 use mangopay::wallet::{CreateWallet, Wallet};
 use mangopay::Mangopay;
-use mongodb::bson::{doc, Array};
+use mongodb::bson::{doc, Array, Bson};
 use mongodb::sync::Database;
 use rocket::http::Status;
 use rocket::outcome::Outcome;
@@ -14,8 +14,9 @@ use rocket::serde::json::{json, Json, Value};
 use rocket::serde::{Deserialize, Serialize};
 use rocket::{request, Request};
 use std::borrow::Borrow;
+use mongodb::bson;
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(crate = "rocket::serde")]
 pub struct User {
     pub id: String,
@@ -41,6 +42,23 @@ impl User {
             Err(e) => {
                 dbg!(e);
                 None
+            }
+        }
+    }
+
+    pub fn update_user(&self, connection: &Database) -> Result<User, Status> {
+        let result = connection
+            .collection::<User>("users")
+            .find_one_and_update(
+                doc! {"id": self.id.clone()},
+                doc! {"$set": self},
+                None,
+            );
+        match result {
+            Ok(v) => Ok(v.unwrap()),
+            Err(e) => {
+                dbg!(e);
+                Err(Status::FailedDependency)
             }
         }
     }
@@ -142,6 +160,12 @@ impl User {
                 Err(Status::AlreadyReported)
             }
         }
+    }
+}
+
+impl Into<Bson> for User {
+    fn into(self) -> bson::Bson {
+        bson::to_bson(&self).unwrap()
     }
 }
 
