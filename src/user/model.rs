@@ -15,6 +15,8 @@ use rocket::serde::{Deserialize, Serialize};
 use rocket::{request, Request};
 use std::borrow::Borrow;
 use mongodb::bson;
+use std::env;
+
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(crate = "rocket::serde")]
@@ -102,8 +104,8 @@ impl User {
 
     pub async fn set_mango_user(&mut self) -> Result<&mut User, Status> {
         let mango: Mangopay = Mangopay::init(
-            env!("MANGO_CLIENT_ID").parse().unwrap(),
-            env!("MANGO_API_KEY").parse().unwrap(),
+            env::var("MANGO_CLIENT_ID").expect("MANGO_CLIENT_ID not set").parse().unwrap(),
+            env::var("MANGO_API_KEY").expect("MANGO_API_KEY not set").parse().unwrap(),
             "https://api.sandbox.mangopay.com/v2.01/".to_string()
         );
         let user_infos = CreateUserBody {
