@@ -9,6 +9,7 @@ use rocket_sentry::RocketSentry;
 
 mod db;
 mod user;
+mod card;
 
 pub struct CORS;
 
@@ -37,6 +38,7 @@ fn rocket() -> Rocket<Build> {
         .attach(CORS)
         .attach(RocketSentry::fairing());
     rocket = user::mount(rocket);
+    rocket = card::mount(rocket);
     rocket
 }
 
