@@ -1,15 +1,19 @@
 extern crate dotenv;
 extern crate rocket;
 
+#[macro_use]
+extern crate serde_derive;
+
 use dotenv::dotenv;
 use rocket::fairing::{Fairing, Info, Kind};
 use rocket::http::Header;
 use rocket::{Build, Request, Response, Rocket};
 use rocket_sentry::RocketSentry;
 
-mod db;
-mod user;
 mod card;
+mod db;
+mod mangopay;
+mod user;
 
 pub struct CORS;
 
@@ -34,9 +38,7 @@ impl Fairing for CORS {
 fn rocket() -> Rocket<Build> {
     dotenv().ok();
 
-    let mut rocket = rocket::build()
-        .attach(CORS)
-        .attach(RocketSentry::fairing());
+    let mut rocket = rocket::build().attach(CORS).attach(RocketSentry::fairing());
     rocket = user::mount(rocket);
     rocket = card::mount(rocket);
     rocket

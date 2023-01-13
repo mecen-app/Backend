@@ -1587,19 +1587,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "mangopay"
-version = "0.1.6"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "03cc3178028fb32b5908cd776ccfc0613c829f0a056d7dd0dd3d1d2a9e76666e"
-dependencies = [
- "base64 0.13.0",
- "reqwest 0.11.11",
- "serde",
- "serde_derive",
- "serde_json",
-]
-
-[[package]]
 name = "match_cfg"
 version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1639,16 +1626,20 @@ dependencies = [
 name = "mecen_backend"
 version = "0.1.0"
 dependencies = [
+ "base64 0.13.0",
  "dotenv",
  "futures 0.3.21",
  "jwks-client",
  "jwt",
- "mangopay",
  "mongodb",
+ "reqwest 0.11.11",
  "rocket",
  "rocket-sentry",
  "rust-crypto",
  "rustc-serialize",
+ "serde",
+ "serde_derive",
+ "serde_json",
  "uuid 0.8.2",
 ]
 

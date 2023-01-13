@@ -1,10 +1,12 @@
 #![allow(proc_macro_derive_resolution_fallback)]
 
 use crate::db;
+use crate::mangopay;
+use crate::mangopay::model::Mangopay;
 use jwks_client::keyset::KeyStore;
 use mangopay::user::CreateUserBody;
 use mangopay::wallet::{CreateWallet, Wallet};
-use mangopay::Mangopay;
+use mongodb::bson;
 use mongodb::bson::{doc, Array, Bson};
 use mongodb::sync::Database;
 use rocket::http::Status;
@@ -14,9 +16,7 @@ use rocket::serde::json::{json, Json, Value};
 use rocket::serde::{Deserialize, Serialize};
 use rocket::{request, Request};
 use std::borrow::Borrow;
-use mongodb::bson;
 use std::env;
-
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(crate = "rocket::serde")]
@@ -24,7 +24,7 @@ pub struct User {
     pub id: String,
     pub token_id: String,
     pub email: String,
-    pub balance: i32,
+    pub balance: i64,
     pub friends: Array,
     pub open_loans: Array,
     pub open_borrows: Array,
@@ -35,12 +35,16 @@ pub struct User {
 }
 
 impl User {
-    pub fn from_email(email: String, connection: &Database) -> Option<User> {
+    pub async fn from_email(email: String, connection: &Database) -> Option<User> {
         let result = connection
             .collection::<User>("users")
             .find_one(doc! {"email": email}, None);
         match result {
-            Ok(v) => Some(v?),
+            Ok(v) => {
+                let mut user: User = v?;
+                user.get_wallet_balance(connection).await;
+                Some(user)
+            }
             Err(e) => {
                 dbg!(e);
                 None
@@ -49,19 +53,44 @@ impl User {
     }
 
     pub fn update_user(&self, connection: &Database) -> Result<User, Status> {
-        let result = connection
-            .collection::<User>("users")
-            .find_one_and_update(
-                doc! {"id": self.id.clone()},
-                doc! {"$set": self},
-                None,
-            );
+        let result = connection.collection::<User>("users").find_one_and_update(
+            doc! {"id": self.id.clone()},
+            doc! {"$set": self},
+            None,
+        );
         match result {
             Ok(v) => Ok(v.unwrap()),
             Err(e) => {
                 dbg!(e);
                 Err(Status::FailedDependency)
             }
+        }
+    }
+
+    pub async fn get_wallet_balance(&mut self, _connection: &Database) -> i64 {
+        let mango: Mangopay = Mangopay::init(
+            env::var("MANGO_CLIENT_ID")
+                .expect("MANGO_CLIENT_ID not set")
+                .parse()
+                .unwrap(),
+            env::var("MANGO_API_KEY")
+                .expect("MANGO_API_KEY not set")
+                .parse()
+                .unwrap(),
+            "https://api.sandbox.mangopay.com/v2.01/".to_string(),
+        );
+
+        let mangouser = mango.list_wallets(self.mango_pay_user_id.to_string()).await;
+        match mangouser {
+            Ok(v) => {
+                let mut res: i64 = 0;
+                for w in v.iter() {
+                    res += w.balance.amount;
+                }
+                self.balance = res;
+                res
+            }
+            Err(_e) => 0,
         }
     }
 
@@ -82,7 +111,7 @@ impl User {
         }
     }
 
-    pub fn get_user_from_token(mut token: String, connection: &Database) -> Option<User> {
+    pub async fn get_user_from_token(mut token: String, connection: &Database) -> Option<User> {
         let jkws_url = "https://www.googleapis.com/oauth2/v3/certs";
         let key_set = KeyStore::new_from(jkws_url).unwrap();
 
@@ -94,6 +123,7 @@ impl User {
                     jwt.payload().get_str("email").unwrap().to_string(),
                     connection,
                 )
+                .await
             }
             Err(e) => {
                 dbg!(e.borrow());
@@ -104,9 +134,15 @@ impl User {
 
     pub async fn set_mango_user(&mut self) -> Result<&mut User, Status> {
         let mango: Mangopay = Mangopay::init(
-            env::var("MANGO_CLIENT_ID").expect("MANGO_CLIENT_ID not set").parse().unwrap(),
-            env::var("MANGO_API_KEY").expect("MANGO_API_KEY not set").parse().unwrap(),
-            "https://api.sandbox.mangopay.com/v2.01/".to_string()
+            env::var("MANGO_CLIENT_ID")
+                .expect("MANGO_CLIENT_ID not set")
+                .parse()
+                .unwrap(),
+            env::var("MANGO_API_KEY")
+                .expect("MANGO_API_KEY not set")
+                .parse()
+                .unwrap(),
+            "https://api.sandbox.mangopay.com/v2.01/".to_string(),
         );
         let user_infos = CreateUserBody {
             first_name: match self.user_name.split(' ').collect::<Vec<&str>>().get(0) {
@@ -126,21 +162,24 @@ impl User {
             Ok(user) => user,
             Err(e) => {
                 dbg!(e);
-                return Err(Status::FailedDependency)
-            },
+                return Err(Status::FailedDependency);
+            }
         };
         self.mango_pay_user_id = user.id;
-        let wallet: Wallet = match mango.create_wallet(CreateWallet{
-            owners: vec![self.mango_pay_user_id.to_string()],
-            description: "User wallet".to_string(),
-            currency: "EUR".to_string(),
-            tag: "Backend Created".to_string()
-        }).await {
+        let wallet: Wallet = match mango
+            .create_wallet(CreateWallet {
+                owners: vec![self.mango_pay_user_id.to_string()],
+                description: "User wallet".to_string(),
+                currency: "EUR".to_string(),
+                tag: "Backend Created".to_string(),
+            })
+            .await
+        {
             Ok(wallet) => wallet,
             Err(e) => {
                 dbg!(e);
-                return Err(Status::FailedDependency)
-            },
+                return Err(Status::FailedDependency);
+            }
         };
         self.mango_pay_wallet_id = wallet.id;
         Ok(self)
@@ -186,7 +225,7 @@ impl<'r> FromRequest<'r> for User {
                 return Outcome::Forward(());
             }
         };
-        match User::get_user_from_token(keys[0].to_string(), &db) {
+        match User::get_user_from_token(keys[0].to_string(), &db).await {
             Some(user) => Outcome::Success(user),
             None => Outcome::Forward(()),
         }
