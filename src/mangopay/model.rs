@@ -61,6 +61,7 @@ impl Mangopay {
 
     pub async fn make_get_api_call(self: &Mangopay, api_url: String) -> reqwest::Result<Response> {
         let client: Client = reqwest::Client::new();
+        dbg!(format!("{}/{}", self.mango_api_url_with_user_id, api_url));
         client
             .get(format!("{}/{}", self.mango_api_url_with_user_id, api_url))
             .header(

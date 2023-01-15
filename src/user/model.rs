@@ -1,5 +1,3 @@
-#![allow(proc_macro_derive_resolution_fallback)]
-
 use crate::db;
 use crate::mangopay;
 use crate::mangopay::model::Mangopay;
